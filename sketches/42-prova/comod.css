@@ -1,0 +1,94 @@
+/* Co-Modification: the full-screen 3D stage. Built on style.css (the shared look).
+   Colour is used only to encode the three materials: purple PM2.5, cyan release, amber temperature. */
+
+:root {
+  --pm: #7a4fd0;       /* PM2.5, observed */
+  --release: #19b6d2;  /* released water and ice, schematic */
+  --heat: #e08a1e;     /* temperature and inversion layers */
+  --stage-bg: #e8e7e3;
+  --stage-ink: #1d1d1f;
+  --glass: rgba(246, 245, 242, .86);
+}
+
+html { overflow-x: clip; }
+#stage {
+  position: relative; height: calc(100vh - 7rem); height: calc(100svh - 7rem); min-height: 620px;
+  width: 100vw; margin: 0 0 48px calc(50% - 50vw); background: var(--stage-bg); color: var(--stage-ink);
+  overflow: hidden; border-top: 1px solid #000; border-bottom: 1px solid #000;
+}
+.viewport { position: absolute; inset: 0; }
+#view { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+#labels { position: absolute; inset: 0; pointer-events: none; font-size: 11px; letter-spacing: .02em; }
+#labels .lab { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; color: var(--stage-ink); text-shadow: 0 0 3px var(--stage-bg), 0 0 3px var(--stage-bg); }
+#labels .lab.tick { transform: translate(6px, -50%); color: #555; }
+#labels .lab.pm { color: #4b2a92; font-weight: 600; }
+#labels .lab.release { color: #0b7b8f; font-weight: 600; }
+#labels .lab.heat { color: #9a5a08; }
+#labels .lab.far { color: #666; font-style: italic; }
+
+.panel { position: absolute; background: var(--glass); border: 1px solid #000; padding: 10px 12px; font-size: 14px; backdrop-filter: blur(4px); }
+.panel p { margin: 2px 0; }
+.label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.title-panel { top: 16px; left: 16px; max-width: 18rem; }
+.title-panel h1 { font-size: 28px; margin: 2px 0 4px; }
+.kicker { font-size: 12px; color: #555; }
+.clock { font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 600; }
+.phase { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+
+.now-panel { top: 16px; right: 16px; width: 17.5rem; max-height: calc(100% - 190px); overflow: auto; }
+.readout { display: grid; grid-template-columns: 10px 1fr; gap: 10px; padding: 6px 0; border-bottom: 1px solid #0002; }
+.big { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.big small { font-size: 13px; font-weight: 400; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: baseline; margin-top: 4px; }
+.swatch.pm { background: var(--pm); }
+.swatch.release { background: var(--release); }
+.swatch.heat { background: var(--heat); }
+#profile { width: 100%; height: auto; margin-top: 4px; }
+#profile text { font: 9px var(--font); fill: #333; }
+
+.cams { left: 16px; bottom: 172px; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; }
+.cams button, .controls button { font: 13px var(--font); padding: 4px 10px; background: #fff; color: #000; border: 1px solid #000; cursor: pointer; }
+.cams button[aria-pressed="true"], .controls button.on { background: #000; color: #fff; }
+
+.events { left: 16px; bottom: 218px; width: 21rem; max-height: calc(100% - 460px); min-height: 90px; overflow: auto; font-size: 13px; }
+.events .ev { padding: 4px 0 4px 8px; border-left: 3px solid #999; margin: 4px 0; }
+.events .ev.observed { border-color: var(--pm); }
+.events .ev.intervention { border-color: var(--release); }
+.events .ev.mechanism { border-color: var(--release); border-left-style: dotted; }
+.events .ev.uncertainty { border-color: #000; border-left-style: dashed; }
+.events .ev .tag { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: #555; display: block; }
+.events .ev .cite { font-size: 11px; }
+.events .ev .cite a { margin-right: 4px; }
+
+.timeline { left: 16px; right: 16px; bottom: 16px; padding: 8px 12px 6px; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; margin-bottom: 4px; }
+.controls select { font: 13px var(--font); }
+#chart { width: 100%; height: 78px; display: block; }
+#chart text { font: 10px var(--font); fill: #333; }
+#scrub { width: 100%; margin: 0; accent-color: #000; }
+
+.fail { left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 24rem; }
+
+.key dt { margin-top: 18px; }
+.key .swatch { margin-right: 6px; }
+ol.sources { padding-left: 1.6em; font-size: 15px; }
+ol.sources li { margin: 6px 0; max-width: none; }
+ol.sources .meta { color: var(--muted); font-size: 13px; }
+ol.sources li:target { background: var(--soft); outline: 1px solid var(--line); }
+.chk { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; border: 1px solid currentColor; padding: 0 4px; margin-left: 4px; }
+
+/* Phones: stack the panels, keep the canvas visible */
+@media (max-width: 760px) {
+  #stage { height: auto; min-height: 0; display: flex; flex-direction: column; }
+  .viewport { position: relative; inset: auto; height: 62vh; order: 2; }
+  .panel { position: relative; inset: auto; width: auto; max-height: none; margin: 0; border-width: 0 0 1px; backdrop-filter: none; }
+  .title-panel { order: 1; max-width: none; }
+  .cams { order: 3; }
+  .timeline { order: 4; }
+  .now-panel { order: 5; }
+  .events { order: 6; }
+  #profile { max-width: 260px; }
+}
+@media (prefers-color-scheme: dark) {
+  #stage { border-color: #fff; }
+}

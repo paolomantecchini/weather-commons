@@ -1,0 +1,31 @@
+{
+  "about": "Observed PM2.5 in Bangkok, January 2025. Morning monitoring bulletins of the BMA Air Quality Information Centre, as reported at about 07:00 for the 05:00–07:00 window. These are NOT 24-hour averages and NOT hourly series. 'districts' lists only the highest districts each report names (usually five), so they are not a complete map.",
+  "kind": "observed",
+  "unit": "µg/m³",
+  "window": "05:00–07:00 local time, reported at about 07:00",
+  "standards": [
+    { "label": "Thai 24-hour standard", "value": 37.5, "source": "onep-std" },
+    { "label": "WHO 24-hour guideline", "value": 15, "source": "who-aqg" }
+  ],
+  "days": [
+    { "date": "2025-01-20", "citywide": 54.1, "status": "verified", "source": "nation-0120",
+      "districts": [["Nong Khaem", 73.0], ["Lat Krabang", 68.2], ["Khlong Sam Wa", 67.5], ["Nong Chok", 67.1], ["Phasi Charoen", 66.4]], "districtSource": "nation-0120" },
+    { "date": "2025-01-21", "citywide": 58.9, "status": "verified", "source": "nation-0121",
+      "districts": [["Nong Khaem", 93.8], ["Sai Mai", 76.2], ["Thawi Watthana", 73.6], ["Phasi Charoen", 71.7], ["Bang Khun Thian", 71.5]], "districtSource": "nation-0121" },
+    { "date": "2025-01-22", "citywide": 62.6, "status": "verified", "source": "nation-0122",
+      "districts": [["Nong Khaem", 86.2], ["Bang Khun Thian", 80.2], ["Phasi Charoen", 80.0], ["Thawi Watthana", 76.3], ["Bang Bon", 75.8]], "districtSource": "nation-0122" },
+    { "date": "2025-01-23", "citywide": 71.0, "status": "verified", "source": "nation-0123",
+      "districts": [["Nong Khaem", 96.6], ["Bang Khun Thian", 85.9], ["Phasi Charoen", 83.4], ["Thawi Watthana", 83.3], ["Nong Chok", 81.4]], "districtSource": "nation-0123" },
+    { "date": "2025-01-24", "citywide": 88.4, "status": "verified", "source": "nation-0124", "alsoSource": "bma-0124",
+      "districts": [["Nong Khaem", 108.0], ["Khan Na Yao", 107.7], ["Min Buri", 105.0], ["Thawi Watthana", 103.8], ["Lak Si", 102.6]], "districtSource": "nation-0124" },
+    { "date": "2025-01-25", "citywide": 73.4, "status": "verified", "source": "nation-0125",
+      "districts": [["Nong Chok", 93.6], ["Min Buri", 91.8], ["Khan Na Yao", 91.5], ["Bang Na", 89.9], ["Khlong Sam Wa", 89.7]], "districtSource": "nation-0125" },
+    { "date": "2025-01-26", "citywide": 58.6, "status": "unverified", "source": "bma-0126",
+      "note": "Official BMA bulletin as cited in the research brief; the page could not be loaded to check it. The Nation's report for this day gives district values only.",
+      "districts": [["Nong Chok", 82.7], ["Sai Mai", 73.9], ["Min Buri", 73.1], ["Bueng Kum", 72.8], ["Khlong Sam Wa", 72.2]], "districtSource": "nation-0126" },
+    { "date": "2025-01-27", "citywide": 41.0, "status": "verified", "source": "nation-0127",
+      "districts": [["Nong Chok", 51.8], ["Bueng Kum", 51.0], ["Lak Si", 50.3], ["Wang Thonglang", 49.5], ["Bang Na", 49.5]], "districtSource": "nation-0127" },
+    { "date": "2025-01-28", "citywide": 26.0, "status": "verified", "source": "nation-0128",
+      "districts": [["Phasi Charoen", 35.0], ["Thon Buri", 34.0], ["Lak Si", 32.7], ["Phra Khanong", 32.2], ["Prawet", 31.8]], "districtSource": "nation-0128" }
+  ]
+}
