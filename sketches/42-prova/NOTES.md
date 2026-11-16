@@ -11,11 +11,13 @@ Working notes for sketch 42 · Co-Modification. Read this first. Date each entry
 
 ## Decisions
 
-- 2026-11-16: The purple particles follow only the observed bulletins. The cyan release never changes them, so the view does not show the flights clearing the air.
+- 2026-11-16: The overall amount of purple follows only the observed bulletins. At Paolo's request the claimed effect is drawn as an opening in the purple during spraying, always labelled as the authorities' claim, not measured.
 - 2026-11-16: visualDensity = clamp(C / 100, 0, 1). 100 µg/m³ is just above the period's peak (88.4).
 - 2026-11-16: Inversions use pressure levels from one model only (1000–850 hPa), not ERA5 2 m temperature, to avoid mixing datasets.
 - 2026-11-16: Aircraft drawn at 850 m (inside the 3,000 ft ceiling), with the reported 3,000 ft and ≈1,500 m shown as rings.
 - 2026-11-16: The folder stays `42-prova`; the title is Co-Modification.
+- 2026-11-16: Paolo: the amber inversion bands are removed (not significant for the piece); releases are red instead of cyan. The mixing height stays as a grey dashed line, because the purple's height follows it. Inversion data is still computed in data/meteo.json.
+- 2026-11-16: Page text rewritten in plain language around three questions: what was sprayed, what was the goal, what happened to PM2.5. The aircraft now arrives and climbs before spraying.
 
 ## Questions
 

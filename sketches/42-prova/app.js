@@ -1,6 +1,6 @@
 // Co-Modification · sketch 42
-// A 3D reading of Bangkok, 20–28 January 2025: observed PM2.5 (purple), reported releases (cyan),
-// modelled temperature layers (amber). Three separate records on one clock. Nothing here simulates physics.
+// A 3D reading of Bangkok, 20–28 January 2025: observed PM2.5 (purple), reported releases (red),
+// with the ERA5 mixing height as a grey line. Separate records on one clock. Nothing here simulates physics.
 //
 // Units: 1 scene unit = 1 km horizontally. Heights are exaggerated VZ times (labels give true metres).
 // Scene axes: x = east, y = up, z = south (so north is −z). Time t = hours since 2025-01-20 00:00 local.
@@ -169,9 +169,11 @@ const pmMat = new THREE.ShaderMaterial({
   uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
     uExt: { value: EXT }, uDrift: { value: new THREE.Vector2() }, uMix: { value: 1 }, uTime: { value: 0 },
     uColor: { value: new THREE.Color('#6b3fc6') }, uSize: { value: 2.0 * renderer.getPixelRatio() }, uAlpha: { value: 0.8 },
+    uHoleR: { value: 0 }, uHoleS: { value: 0 },
   }]),
   vertexShader: /* glsl */`
     attribute vec4 aSeed; uniform vec2 uExt; uniform vec2 uDrift; uniform float uMix; uniform float uTime; uniform float uSize;
+    uniform float uHoleR; uniform float uHoleS;
     varying float vFade;
     #include <fog_pars_vertex>
     void main() {
@@ -180,10 +182,14 @@ const pmMat = new THREE.ShaderMaterial({
       float h = uMix * pow(aSeed.z, 1.7);                                  // most particles low, under the mixing height
       if (aSeed.w > 0.93) h = uMix + (aSeed.w - 0.93) * 40.0 * aSeed.z;    // a thin tail above it
       h += 0.04 * sin(uTime * 0.7 + aSeed.w * 40.0);
+      // CLAIMED effect (not measured): inside the opening, dust rises through the 'lid' and thins out
+      float lift = uHoleR > 0.0 ? uHoleS * smoothstep(uHoleR, uHoleR * 0.35, length(p)) : 0.0;
+      float rise = mod(uTime * 0.5 + aSeed.w * 37.0, 1.0);             // slow upward flow, drawn
+      h = mix(h, uMix + 0.3 + rise * 11.0 * uHoleS, lift);
       vec4 mvPosition = modelViewMatrix * vec4(p.x, max(h, 0.01), p.y, 1.0);
       gl_Position = projectionMatrix * mvPosition;
       gl_PointSize = clamp(uSize * 22.0 / -mvPosition.z, 1.0, 5.0);
-      vFade = smoothstep(1.0, 0.82, max(abs(p.x) / uExt.x, abs(p.y) / uExt.y));
+      vFade = smoothstep(1.0, 0.82, max(abs(p.x) / uExt.x, abs(p.y) / uExt.y)) * (1.0 - 0.45 * lift);
       #include <fog_vertex>
     }`,
   fragmentShader: /* glsl */`
@@ -197,26 +203,28 @@ const pmMat = new THREE.ShaderMaterial({
 });
 const pmPoints = new THREE.Points(pmGeo, pmMat); pmPoints.position.copy(CBD).setY(0); scene.add(pmPoints);
 // translucent violet haze: stacked sheets up to the mixing height
-const haze = [];
+const haze = [], hazeMat = [];
 for (let i = 0; i < 8; i++) {
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(EXT.x * 2, EXT.y * 2), new THREE.MeshBasicMaterial({ color: '#8a6bd0', transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide }));
-  m.rotation.x = -Math.PI / 2; m.position.copy(CBD); scene.add(m); haze.push(m);
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide,
+    uniforms: { uColor: { value: new THREE.Color('#8a6bd0') }, opacity: { value: 0 }, uHoleR: { value: 0 }, uHoleS: { value: 0 } },
+    vertexShader: 'varying vec2 vP; void main(){ vP = position.xy; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: 'uniform vec3 uColor; uniform float opacity; uniform float uHoleR; uniform float uHoleS; varying vec2 vP; void main(){ float hole = uHoleS * smoothstep(uHoleR, uHoleR * 0.35, length(vP)); gl_FragColor = vec4(uColor, opacity * (1.0 - hole)); }',
+  });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(EXT.x * 2, EXT.y * 2), mat);
+  m.rotation.x = -Math.PI / 2; m.position.copy(CBD); scene.add(m); haze.push(m); hazeMat.push(mat);
 }
 // district bars: only the highest districts named in each bulletin
 const barMat = new THREE.MeshLambertMaterial({ color: '#6b3fc6', transparent: true, opacity: 0.85 });
 const bars = Array.from({ length: 5 }, () => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 1, 16), barMat); m.visible = false; scene.add(m); return m; });
 const BAR_UNITS_PER_UG = 0.03;   // bar height: 1 µg/m³ = 30 m of scene height; not an altitude
 
-// ---------------------------------------------------------------- temperature layers (amber, modelled)
-// Drawn as a section plane through the city centre: full width from the side, a strip from above.
+// ---------------------------------------------------------------- mixing height (reanalysed), grey dashed line
+// Drawn on a section plane through the city centre.
 const SECTION_D = 2.5;
-const invSlabs = Array.from({ length: 6 }, () => {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(34, 1, SECTION_D), new THREE.MeshBasicMaterial({ color: '#e08a1e', transparent: true, opacity: 0, depthWrite: false }));
-  m.position.copy(CBD); m.visible = false; scene.add(m); return m;
-});
 const blhFrame = (() => {
   const w = 17, d = SECTION_D / 2, pts = [[-w, -d], [w, -d], [w, d], [-w, d], [-w, -d]].map(([x, z]) => new THREE.Vector3(x, 0, z));
-  const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: '#c06f0c', dashSize: 0.8, gapSize: 0.5 }));
+  const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: '#6f6d68', dashSize: 0.8, gapSize: 0.5 }));
   l.computeLineDistances(); l.position.copy(CBD); scene.add(l); return l;
 })();
 // altitude scale on the west edge of the section
@@ -228,17 +236,25 @@ const TICKS = [0, 250, 500, 1000, 1500];
   scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: '#333' })));
 }
 
-// ---------------------------------------------------------------- aircraft + release (cyan, reported, schematic)
+// ---------------------------------------------------------------- aircraft + release (red, reported, schematic)
 const FLIGHT_C = CBD.clone();   // no track is published: the spiral is centred on the city centre, schematically
-function slotAt(t) {           // which reported slot (if any) covers time t, plus the plume tail after it
+function slotAt(t, tail = 1.5) {   // which reported slot (if any) covers time t, plus a tail after it
   const d = Math.floor(t / 24);
   if (d < FIRST_FLIGHT_DAY || d > 8) return null;
-  for (const s of SLOTS) { const t0 = d * 24 + s; if (t >= t0 && t < t0 + SLOT_H + 1.5) return { t0, d, s, p: (t - t0) / SLOT_H }; }
+  for (const s of SLOTS) { const t0 = d * 24 + s; if (t >= t0 && t < t0 + SLOT_H + tail) return { t0, d, s, p: (t - t0) / SLOT_H }; }
   return null;
 }
-function flightPos(p, out = new THREE.Vector3()) {   // spiral inwards ('opening the lid', Thai PBS), schematic
-  const a = p * Math.PI * 6, r = 7 - 5.5 * p;
+const CLIMB = 0.25;             // first quarter of a slot: arrive and climb; the rest: spiral and spray
+const HUAHIN = (() => { const b = geo.bases.find(x => x.id === 'huahin'); return new THREE.Vector3(b.xy[0], 0, -b.xy[1]).normalize(); })();
+function spiralPos(q, out) {    // spiral inwards ('opening the lid', Thai PBS), schematic
+  const a = q * Math.PI * 6, r = 7 - 5.5 * q;
   return out.set(FLIGHT_C.x + Math.cos(a) * r, alt(FLIGHT_DRAWN), FLIGHT_C.z + Math.sin(a) * r);
+}
+function flightPos(p, out = new THREE.Vector3()) {
+  if (p >= CLIMB) return spiralPos((p - CLIMB) / (1 - CLIMB), out);
+  const k = p / CLIMB, e = k * k * (3 - 2 * k);   // arrives low from the direction of Hua Hin and climbs (schematic)
+  const start = FLIGHT_C.clone().addScaledVector(HUAHIN, 22).setY(alt(150)), end = spiralPos(0, new THREE.Vector3());
+  return out.lerpVectors(start, end, e).setY(alt(150 + (FLIGHT_DRAWN - 150) * Math.min(1, k * 1.4)));
 }
 const plane = new THREE.Group();
 {
@@ -251,7 +267,7 @@ const plane = new THREE.Group();
 }
 const pathLine = (() => {
   const pts = []; for (let i = 0; i <= 300; i++) pts.push(flightPos(i / 300));
-  const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: '#19b6d2', dashSize: 0.3, gapSize: 0.3, transparent: true, opacity: 0.6 }));
+  const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: '#d6332b', dashSize: 0.3, gapSize: 0.3, transparent: true, opacity: 0.6 }));
   l.computeLineDistances(); l.visible = false; scene.add(l); return l;
 })();
 function ring(h, color, dashed) {
@@ -259,10 +275,10 @@ function ring(h, color, dashed) {
   const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), dashed ? new THREE.LineDashedMaterial({ color, dashSize: 0.4, gapSize: 0.35 }) : new THREE.LineBasicMaterial({ color }));
   if (dashed) l.computeLineDistances(); l.visible = false; scene.add(l); return l;
 }
-const ringCeil = ring(FLIGHT_FT, '#0e8aa0', true), ringAFP = ring(AFP_M, '#0e8aa0', true);
+const ringCeil = ring(FLIGHT_FT, '#a3201a', true), ringAFP = ring(AFP_M, '#a3201a', true);
 const band = (() => {   // reported altitude range as a faint cylinder wall
   const g = new THREE.CylinderGeometry(8, 8, alt(AFP_M - FLIGHT_FT), 96, 1, true);
-  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: '#19b6d2', transparent: true, opacity: 0.025, side: THREE.DoubleSide, depthWrite: false }));
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: '#d6332b', transparent: true, opacity: 0.025, side: THREE.DoubleSide, depthWrite: false }));
   m.position.set(FLIGHT_C.x, alt((AFP_M + FLIGHT_FT) / 2), FLIGHT_C.z); m.visible = false; scene.add(m); return m;
 })();
 const NREL = small ? 2500 : 6000, LIFE = 1.5;   // plume particles per slot; drawn lifetime in hours
@@ -276,14 +292,22 @@ const relMat = new THREE.ShaderMaterial({
   transparent: true, depthWrite: false, uniforms: { uSize: { value: 2.4 * renderer.getPixelRatio() } },
   vertexShader: `attribute float aAlpha; varying float vA; uniform float uSize;
     void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); gl_Position = projectionMatrix*mv; gl_PointSize = clamp(uSize*22.0/-mv.z, 1.0, 6.0); vA = aAlpha; }`,
-  fragmentShader: `varying float vA; void main(){ vec2 c = gl_PointCoord-0.5; if(dot(c,c)>0.25||vA<=0.0) discard; gl_FragColor = vec4(0.10,0.71,0.82,vA); }`,
+  fragmentShader: `varying float vA; void main(){ vec2 c = gl_PointCoord-0.5; if(dot(c,c)>0.25||vA<=0.0) discard; gl_FragColor = vec4(0.84,0.20,0.17,vA); }`,
 });
 scene.add(new THREE.Points(relGeo, relMat));
 const tmp = new THREE.Vector3();
+// strength of the CLAIMED clearing: grows while spraying, fades over 3 hours after the slot
+function claimAt(t) {
+  const slot = slotAt(t, 3); if (!slot) return 0;
+  const q = (slot.p - CLIMB) / (1 - CLIMB);
+  if (q < 0) return 0;
+  if (slot.p < 1) return Math.min(q * 1.4, 1);
+  return Math.max(0, 1 - (t - slot.t0 - SLOT_H) / 3);
+}
 function updateRelease(t, slot) {
   if (!slot) { relA.fill(0); relGeo.attributes.aAlpha.needsUpdate = true; return; }
   for (let i = 0; i < NREL; i++) {
-    const te = slot.t0 + (i / NREL) * SLOT_H, age = t - te;          // each particle has a fixed release time
+    const te = slot.t0 + (CLIMB + (1 - CLIMB) * i / NREL) * SLOT_H, age = t - te;   // released only while spiralling
     if (age < 0 || age > LIFE) { relA[i] = 0; continue; }
     flightPos((te - slot.t0) / SLOT_H, tmp);
     const s = 0.25 + age * 1.6;                                           // schematic spread, km
@@ -305,12 +329,12 @@ label('Chao Phraya', 'far', () => { const r = geo.river[0]; return xyz(r[Math.fl
 label('Don Mueang Airport', 'far', () => xyz(dmk.xy, 0.1));
 for (const r of baseRays) label(`${r.b.name} · ${Math.round(r.dist)} km${r.b.confirmed ? '' : ' (airfield unconfirmed)'}`, 'far', () => r.end);
 for (const m of TICKS) label(`${m} m`, 'tick', () => new THREE.Vector3(SCALE_X + 0.6, alt(m), SCALE_Z));
-const blhLabel = label('', 'heat', () => new THREE.Vector3(CBD.x - 9, alt(state.blh) + 0.1, CBD.z + SECTION_D / 2));
+const blhLabel = label('', 'mix', () => new THREE.Vector3(CBD.x - 9, alt(state.blh) + 0.1, CBD.z + SECTION_D / 2));
 const ceilLabel = label('3,000 ft · inner-Bangkok ceiling (The Nation)', 'release', () => new THREE.Vector3(FLIGHT_C.x + 8, alt(FLIGHT_FT), FLIGHT_C.z), () => ringCeil.visible);
 const afpLabel = label('≈1,500 m · release height (AFP)', 'release', () => new THREE.Vector3(FLIGHT_C.x + 8, alt(AFP_M), FLIGHT_C.z), () => ringAFP.visible);
+const claimLabel = label('What the authorities said would happen: dust escapes upward. Not measured.', 'claim', () => new THREE.Vector3(FLIGHT_C.x - 4, alt(1500) + 1.6, FLIGHT_C.z), () => state.claim > 0.08);
 const planeLabel = label('aircraft · path schematic', 'release', () => plane.position.clone().setY(plane.position.y + 0.3), () => plane.visible);
 const barLabels = bars.map(b => label('', 'pm', () => b.position.clone().setY(b.scale.y + 0.25), () => b.visible));
-const invLabels = invSlabs.map(s => label('', 'heat', () => new THREE.Vector3(CBD.x + 12, s.position.y, CBD.z + SECTION_D / 2), () => s.visible));
 const v = new THREE.Vector3();
 function placeLabels() {
   const w = labelLayer.clientWidth, h = labelLayer.clientHeight;
@@ -370,7 +394,7 @@ function drawChart() {
   let s = '';
   pm.standards.forEach((x, i) => { s += `<line x1="0" x2="${W}" y1="${Y(x.value)}" y2="${Y(x.value)}" stroke="#888" stroke-dasharray="3 3"/><text x="${i ? 4 : W - 4}" y="${Y(x.value) - 2}" text-anchor="${i ? 'start' : 'end'}" fill="#666">${x.label} ${x.value} ${cite([x.source]).replace(/<[^>]+>/g, '')}</text>`; });
   for (let d = Math.ceil(t0 / 24); d < 9; d++) s += `<line x1="${X(d * 24)}" x2="${X(d * 24)}" y1="0" y2="${H}" stroke="#0003" vector-effect="non-scaling-stroke"/><text x="${X(d * 24) + 3}" y="10">${DAYS[d]} Jan</text>`;
-  for (let d = FIRST_FLIGHT_DAY; d < 9; d++) for (const sl of SLOTS) s += `<rect x="${X(d * 24 + sl)}" y="${H - 5}" width="${Math.max(X(d * 24 + sl + SLOT_H) - X(d * 24 + sl), 2)}" height="5" fill="#19b6d2"><title>Reported slot, schematic</title></rect>`;
+  for (let d = FIRST_FLIGHT_DAY; d < 9; d++) for (const sl of SLOTS) s += `<rect x="${X(d * 24 + sl)}" y="${H - 5}" width="${Math.max(X(d * 24 + sl + SLOT_H) - X(d * 24 + sl), 2)}" height="5" fill="#d6332b"><title>Reported slot, schematic</title></rect>`;
   const vis = bulletins.filter(b => b.t >= t0 - 24);
   s += `<polyline fill="none" stroke="#6b3fc6" stroke-width="1.5" stroke-dasharray="${$('#interp').checked ? '4 3' : '0'}" vector-effect="non-scaling-stroke" points="${
     $('#interp').checked ? vis.map(b => `${X(b.t)},${Y(b.citywide)}`).join(' ') : vis.map((b, i) => `${X(b.t)},${Y(b.citywide)} ${X(vis[i + 1]?.t ?? T_END)},${Y(b.citywide)}`).join(' ')}"/>`;
@@ -378,22 +402,9 @@ function drawChart() {
   s += `<line id="cursor" x1="0" x2="0" y1="0" y2="${H}" stroke="#000" stroke-width="1.5" vector-effect="non-scaling-stroke"/>`;
   chart.innerHTML = s;
 }
-function drawProfile(m) {
-  const W = 220, H = 120, tLo = 14, tHi = 34, X = c => 24 + (c - tLo) / (tHi - tLo) * (W - 34), Y = z => H - 14 - z / 1600 * (H - 24);
-  const pts = meteo.heights.map((z, i) => [X(m.temps[i]), Y(z)]);
-  let s = `<line x1="24" y1="${H - 14}" x2="${W - 8}" y2="${H - 14}" stroke="#000"/><line x1="24" y1="6" x2="24" y2="${H - 14}" stroke="#000"/>`;
-  for (const z of [0, 500, 1000, 1500]) s += `<text x="20" y="${Y(z) + 3}" text-anchor="end">${z}</text>`;
-  for (const c of [15, 20, 25, 30]) s += `<text x="${X(c)}" y="${H - 3}" text-anchor="middle">${c}°</text>`;
-  for (const [z0, z1] of m.inv) s += `<rect x="24" y="${Y(z1)}" width="${W - 32}" height="${Y(z0) - Y(z1)}" fill="#e08a1e" opacity=".22"/>`;
-  s += `<line x1="24" x2="${W - 8}" y1="${Y(m.blh)}" y2="${Y(m.blh)}" stroke="#c06f0c" stroke-dasharray="3 2"/>`;
-  s += `<polyline fill="none" stroke="#c06f0c" stroke-width="1.6" points="${pts.map(p => p.join(',')).join(' ')}"/>`;
-  s += pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2" fill="#c06f0c"/>`).join('');
-  s += `<circle cx="${X(m.t2m)}" cy="${Y(2)}" r="2.4" fill="#fff" stroke="#555"><title>ERA5 2 m temperature</title></circle>`;
-  $('#profile').innerHTML = s;
-}
 
 // ---------------------------------------------------------------- state and update
-const state = { t: 55, playing: !reduced, speed: 3, blh: 100, drift: new THREE.Vector2() };
+const state = { t: 55, playing: !reduced, speed: 3, blh: 100, drift: new THREE.Vector2(), claim: 0 };
 const tMin = () => $('#early').checked ? 0 : T_MAIN;
 const scrub = $('#scrub');
 function setT(t) { state.t = Math.min(Math.max(t, tMin()), T_END - 0.01); scrub.value = state.t; }
@@ -413,7 +424,7 @@ function update(t, dtHours) {
   // clock and phase
   $('#clock-date').textContent = `${WEEKDAY[d]} ${DAYS[d]} January 2025`;
   $('#clock-time').textContent = `${String(Math.floor(h)).padStart(2, '0')}:${String(Math.floor((h % 1) * 60)).padStart(2, '0')}`;
-  $('#phase').textContent = d < 2 ? 'Background · 20–21 January' : d < 4 ? 'Prelude · before the 24 January announcement' : 'Main phase · emergency campaign and aftermath';
+  $('#phase').textContent = t < FIRST_FLIGHT_DAY * 24 + SLOTS[0] ? 'Before the flights over the city' : 'Flights over the city, from 24 January';
   // purple
   pmGeo.setDrawRange(0, Math.round(dens * NPM));
   state.blh += (Math.max(m.blh, 100) - state.blh) * Math.min(1, dtHours * 4 + 0.02);
@@ -422,7 +433,7 @@ function update(t, dtHours) {
   state.drift.x += -Math.sin(m.wd * Math.PI / 180) * wv; state.drift.y += Math.cos(m.wd * Math.PI / 180) * wv;  // wind FROM wd → moves away
   pmMat.uniforms.uDrift.value.set(state.drift.x, state.drift.y);
   pmMat.uniforms.uTime.value = performance.now() / 1000;
-  haze.forEach((s, i) => { s.position.y = alt(state.blh) * (i + 0.5) / haze.length; s.material.opacity = dens * 0.055 * (1 - i / haze.length * 0.6); });
+  haze.forEach((s, i) => { s.position.y = alt(state.blh) * (i + 0.5) / haze.length; s.material.uniforms.opacity.value = dens * 0.07 * (1 - i / haze.length * 0.6); });
   scene.background.copy(BG).lerp(BG_PM, dens * 0.8); scene.fog.color.copy(scene.background); scene.fog.far = 220 - dens * 80;
   // district bars for the most recent bulletin
   const bul = p.prev;
@@ -431,29 +442,37 @@ function update(t, dtHours) {
     b.visible = !!dist;
     if (dist) { b.scale.y = row[1] * BAR_UNITS_PER_UG; b.position.copy(xyz(dist.c, b.scale.y / 2)); barLabels[i].el.textContent = `${row[0]} ${fmt(row[1])}`; }
   });
-  // amber
-  invSlabs.forEach((s, i) => {
-    const L = m.inv[i]; s.visible = !!L;
-    if (L) { s.scale.y = alt(L[1] - L[0]); s.position.y = alt((L[0] + L[1]) / 2); s.material.opacity = 0.08 + 0.3 * Math.min(L[2] / 0.6, 1); invLabels[i].el.textContent = `inversion ${L[0]}–${L[1]} m · +${fmt(L[2])} °C`; }
-  });
+  // mixing height
   blhFrame.position.y = alt(state.blh); blhLabel.el.textContent = `ERA5 mixing height ${Math.round(m.blh)} m`;
-  // cyan
+  // red
   const slot = slotAt(t), flying = slot && slot.p >= 0 && slot.p < 1;
   plane.visible = !!flying; pathLine.visible = ringCeil.visible = ringAFP.visible = band.visible = t >= FIRST_FLIGHT_DAY * 24 + SLOTS[0];
   if (flying) { flightPos(slot.p, plane.position); const ahead = flightPos(Math.min(slot.p + 0.01, 1), new THREE.Vector3()); plane.lookAt(ahead); plane.rotateY(-Math.PI / 2); }
   updateRelease(t, slot);
+  state.claim = claimAt(t);
+  pmMat.uniforms.uHoleS.value = state.claim; pmMat.uniforms.uHoleR.value = 3 + 6 * state.claim;
+  hazeMat.forEach(m => { m.uniforms.uHoleS.value = state.claim; m.uniforms.uHoleR.value = 3 + 6 * state.claim; });
+  if (flying) planeLabel.el.textContent = slot.p < CLIMB ? 'aircraft climbing · from the direction of Hua Hin (schematic)' : `spraying at about ${FLIGHT_DRAWN} m · path schematic`;
   // readouts
   $('#pm-value').textContent = fmt(p.value);
-  const b = p.prev, bTxt = `${+b.date.slice(8)} Jan bulletin (07:00): ${fmt(b.citywide)} · ${b.status === 'verified' ? 'checked' : 'not independently checked'} ${cite([b.source])}`;
-  $('#pm-note').innerHTML = (p.mode === 'interp' ? `Interpolated for display between morning bulletins. Last: ${bTxt}` : p.mode === 'before' ? `Before the first bulletin shown. Holding ${bTxt}` : `Holding the last bulletin. ${bTxt}`) + ` · ${Math.round(dens * 100)}% of particles drawn`;
-  $('#inv-note').innerHTML = (m.inv.length ? 'Inversion: ' + m.inv.map(([a, z, dT]) => `${a}–${z} m (+${fmt(dT)} °C)`).join(', ') : 'No inversion between model levels') + `. ERA5 mixing height ${Math.round(m.blh)} m. ${cite(['era5', 'openmeteo-hf'])}`;
-  $('#flight-note').innerHTML = t < FIRST_FLIGHT_DAY * 24 + SLOTS[0]
-    ? `No inner-Bangkok flight is drawn before the 24 January announcement (10:00). Operations were already under way in January (AFP photo, 15 Jan). ${cite(['afp-star-0124', 'khaosod-0106'])}`
-    : flying ? `Reported ${String(slot.s).padStart(2, '0')}:00 slot. Path, timing within the slot, altitude (850 m drawn) and plume are schematic. Reported altitude: below 3,000 ft or about 1,500 m. ${cite(['nation-0124-flights', 'afp-malaymail-0124', 'thaipbs-0127'])}`
-    : slot ? `Plume after the ${slot.s}:00 slot, schematic. Where the water and ice went is not known.`
-    : `Outside the reported 10:00 and 14:00 slots. No Bangkok flight log is published. ${cite(['nation-0124-flights'])}`;
-  $('#wind-note').innerHTML = `ERA5 surface wind ${fmt(m.ws)} m/s from ${compass(m.wd)} · 2 m air ${fmt(m.t2m)} °C. Purple drift follows this direction; its speed is not to scale.`;
-  if (Math.floor(t * 4) !== update.q) { update.q = Math.floor(t * 4); drawProfile(m); }
+  const b = p.prev;
+  $('#pm-note').innerHTML = `Measured on the morning of ${+b.date.slice(8)} Jan: <strong>${fmt(b.citywide)}</strong>${b.status === 'verified' ? '' : ' (official figure, not double-checked)'} ${cite([b.source])}. ` +
+    (p.mode === 'interp' ? 'Between mornings the number is smoothed.' : 'Shown until the next morning measurement.') + ` More dots = more dust.`;
+  const before = t < FIRST_FLIGHT_DAY * 24 + SLOTS[0];
+  $('#flight-note').innerHTML = before
+    ? `Not over the city yet. Flights over inner Bangkok were announced on 24 January. Before that, aircraft were already spraying outside the city (AFP photo, 15 Jan). ${cite(['afp-star-0124'])}`
+    : flying && slot.p < CLIMB ? `A plane arrives and climbs to about ${FLIGHT_DRAWN} m.`
+    : flying ? `<strong>Spraying cold water and dry ice</strong> from about ${FLIGHT_DRAWN} m (reported: below 3,000 ft, or about 1,500 m). ${cite(['nation-0124-flights', 'afp-malaymail-0124'])}`
+    : slot ? `Spraying has stopped. Where the water and ice went is not known.`
+    : `No plane in the air now. Flights were reported at 10:00 and 14:00 each day. ${cite(['nation-0124-flights'])}`;
+  $('#claim-note').innerHTML = state.claim > 0.02
+    ? `The opening in the purple is <strong>what the authorities said would happen</strong>: the spray breaks the warm 'lid' of air and the dust escapes upward. ${cite(['nation-0124-flights', 'thaipbs-0127'])} It is drawn, not measured.`
+    : `When a plane sprays, the view draws what the authorities said would happen. It is drawn, not measured.`;
+  const fd = Math.min(Math.max(d, FIRST_FLIGHT_DAY), 8), b0 = bulletins.find(x => dayIndex(x.date) === fd), b1 = bulletins.find(x => dayIndex(x.date) === fd + 1);
+  $('#measured').innerHTML = before ? `First flights over the city: 24 January. Measured that morning: <strong>${fmt(bulletins.find(x => dayIndex(x.date) === FIRST_FLIGHT_DAY).citywide)}</strong> µg/m³.`
+    : b1 ? `Morning of ${fd + 20} Jan: <strong>${fmt(b0.citywide)}</strong> → morning of ${fd + 21} Jan: <strong>${fmt(b1.citywide)}</strong> µg/m³ (${Math.round((b1.citywide / b0.citywide - 1) * 100)}%)`
+    : `Morning of 28 Jan: <strong>${fmt(b0.citywide)}</strong> µg/m³, the lowest in the period. From 24 to 28 Jan: 88.4 → 26.0.`;
+  $('#wind-note').innerHTML = `The weather changed too: a cold air mass arrived on 26 Jan and the wind picked up on 27 Jan. ${cite(['nation-0126-tmd', 'nation-0127-pcd'])} Now: wind ${fmt(m.ws)} m/s from ${compass(m.wd)}; the grey dashed line shows how deep the air is being mixed (${Math.round(m.blh)} m). ${cite(['era5'])}`;
   renderEvents(t);
   const cur = chart.querySelector('#cursor'); if (cur) { const x = (t - tMin()) / (T_END - tMin()) * chartW; cur.setAttribute('x1', x); cur.setAttribute('x2', x); }
   // follow camera
