@@ -1,10 +1,9 @@
 /* Co-Modification: the full-screen 3D stage. Built on style.css (the shared look).
-   Colour is used only to encode the three materials: purple PM2.5, cyan release, amber temperature. */
+   Colour is used only to encode the three materials: purple PM2.5, red release. */
 
 :root {
   --pm: #7a4fd0;       /* PM2.5, observed */
-  --release: #19b6d2;  /* released water and ice, schematic */
-  --heat: #e08a1e;     /* temperature and inversion layers */
+  --release: #d6332b;  /* released water and ice, schematic */
   --stage-bg: #e8e7e3;
   --stage-ink: #1d1d1f;
   --glass: rgba(246, 245, 242, .86);
@@ -22,8 +21,9 @@ html { overflow-x: clip; }
 #labels .lab { position: absolute; transform: translate(-50%, -100%); white-space: nowrap; color: var(--stage-ink); text-shadow: 0 0 3px var(--stage-bg), 0 0 3px var(--stage-bg); }
 #labels .lab.tick { transform: translate(6px, -50%); color: #555; }
 #labels .lab.pm { color: #4b2a92; font-weight: 600; }
-#labels .lab.release { color: #0b7b8f; font-weight: 600; }
-#labels .lab.heat { color: #9a5a08; }
+#labels .lab.release { color: #a3201a; font-weight: 600; }
+#labels .lab.mix { color: #555; }
+#labels .lab.claim { color: #4b2a92; font-style: italic; max-width: 22rem; white-space: normal; text-align: center; background: rgba(246,245,242,.75); padding: 2px 6px; }
 #labels .lab.far { color: #666; font-style: italic; }
 
 .panel { position: absolute; background: var(--glass); border: 1px solid #000; padding: 10px 12px; font-size: 14px; backdrop-filter: blur(4px); }
@@ -42,9 +42,7 @@ html { overflow-x: clip; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; vertical-align: baseline; margin-top: 4px; }
 .swatch.pm { background: var(--pm); }
 .swatch.release { background: var(--release); }
-.swatch.heat { background: var(--heat); }
-#profile { width: 100%; height: auto; margin-top: 4px; }
-#profile text { font: 9px var(--font); fill: #333; }
+.swatch.claim { background: transparent; border: 1.5px dashed var(--pm); box-sizing: border-box; }
 
 .cams { left: 16px; bottom: 172px; display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; }
 .cams button, .controls button { font: 13px var(--font); padding: 4px 10px; background: #fff; color: #000; border: 1px solid #000; cursor: pointer; }
@@ -87,7 +85,6 @@ ol.sources li:target { background: var(--soft); outline: 1px solid var(--line); 
   .timeline { order: 4; }
   .now-panel { order: 5; }
   .events { order: 6; }
-  #profile { max-width: 260px; }
 }
 @media (prefers-color-scheme: dark) {
   #stage { border-color: #fff; }
