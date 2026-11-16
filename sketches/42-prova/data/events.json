@@ -1,11 +1,11 @@
 {
   "about": "Timeline entries. Each has a 'layer' that says what kind of claim it is: event (documented environmental or social event), intervention (what authorities reported doing), mechanism (what authorities hypothesised the intervention does), observed (measurement), uncertainty (what the sources do not settle). Times are local (UTC+7).",
   "layers": {
-    "event": "Documented event",
-    "intervention": "Intervention reported by authorities",
-    "mechanism": "Mechanism hypothesised by authorities",
-    "observed": "Observed measurement",
-    "uncertainty": "Uncertainty and limits"
+    "event": "What happened",
+    "intervention": "What the authorities did",
+    "mechanism": "What they said it would do",
+    "observed": "Measured",
+    "uncertainty": "What we cannot say"
   },
   "entries": [
     { "date": "2025-01-06", "layer": "intervention", "text": "Khaosod reports permission for rainmaking flights over Bangkok: a 20×20 km area, 3,000–4,000 ft, dry ice at about −70 °C.", "sources": ["khaosod-0106", "thestandard-0106"], "context": true },
