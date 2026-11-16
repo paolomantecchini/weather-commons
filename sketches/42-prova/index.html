@@ -3,80 +3,142 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>42 · Prova · Realtime Weather</title>
-<!-- style.css is the shared Realtime Weather look, copied into this folder. Add your own styles below it. -->
+<title>42 · Co-Modification · Realtime Weather</title>
+<meta name="description" content="An evidence-based 3D reconstruction of Bangkok's atmospheric intervention during the January 2025 PM2.5 crisis.">
+<!-- style.css is the shared Realtime Weather look. comod.css adds the full-screen 3D stage. -->
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="comod.css">
+<script type="importmap">{ "imports": { "three": "./vendor/three.module.min.js" } }</script>
 </head>
 <body>
 <main>
 <header class="site-header">
-  <div class="brand"><a class="wordmark" href="../">Realtime Weather</a><span class="tagline">Part of <a href="https://tba21.org/uni_weathercommons">Weather Commons</a>, TBA21–Academy UNI</span></div>
+  <div class="brand"><a class="wordmark" href="../">Realtime Weather</a><span class="tagline">Part of <a href="https://tba21.org/uni-wc">Weather Commons</a>, TBA21–Academy UNI</span></div>
   <nav aria-label="Site">
     <a href="../">Sketches</a>
     <a href="../guide/">Guide</a>
     <a href="../catalog/">Catalog</a>
-    <a href="https://github.com/RealtimeUrbanismLab/weather-commons/blob/main/CONTRIBUTING.md">Contribute</a>
+    <a href="#archive">Sources</a>
     <a href="https://community.ocean-archive.org/spaces/25478985">Community</a>
   </nav>
 </header>
 
-<h1>Prova</h1>
+<section id="stage" class="full" aria-label="3D reconstruction">
+  <div class="viewport">
+    <canvas id="view" aria-label="3D view of Bangkok and the atmosphere above it"></canvas>
+    <div id="labels" aria-hidden="true"></div>
+  </div>
 
-<!-- 1. Event: what are you looking at, and what do you want to find out? -->
-<p class="lede">If you only see a wind through moving dots, what can you tell about where it comes from, and what stays hidden?</p>
-<p class="muted small">A starter question for a test sketch. Replace it with the question from your own research.</p>
-<p class="muted small">42 · Paolo Mantecchini · started 2026-11-09</p>
+  <div class="panel title-panel">
+    <p class="kicker">42 · Paolo Mantecchini</p>
+    <h1>Co-Modification</h1>
+    <p class="clock"><span id="clock-date">22 January 2025</span> <span id="clock-time">07:00</span></p>
+    <p class="phase" id="phase">Prelude</p>
+  </div>
 
-<!-- 2. Simulate: a first model. This placeholder shows dots drifting in one steady wind. -->
+  <div class="panel now-panel" id="now" aria-live="polite">
+    <div class="readout">
+      <span class="swatch pm"></span>
+      <div>
+        <p class="label">PM2.5 · observed</p>
+        <p class="big"><span id="pm-value">–</span> <small>µg/m³</small></p>
+        <p class="small muted" id="pm-note">–</p>
+      </div>
+    </div>
+    <div class="readout">
+      <span class="swatch heat"></span>
+      <div>
+        <p class="label">Temperature layers · modelled</p>
+        <p class="small" id="inv-note">–</p>
+        <svg id="profile" viewBox="0 0 220 120" role="img" aria-label="Temperature against height"></svg>
+      </div>
+    </div>
+    <div class="readout">
+      <span class="swatch release"></span>
+      <div>
+        <p class="label">Release · reported, schematic</p>
+        <p class="small" id="flight-note">–</p>
+      </div>
+    </div>
+    <p class="small muted" id="wind-note">–</p>
+  </div>
+
+  <div class="panel cams" role="group" aria-label="Camera">
+    <button data-cam="section" aria-pressed="true">Section</button>
+    <button data-cam="city">City</button>
+    <button data-cam="ground">Ground</button>
+    <button data-cam="follow">Aircraft</button>
+    <button data-cam="orbit">Orbit</button>
+  </div>
+
+  <div class="panel events" id="events" aria-live="polite"></div>
+
+  <div class="panel timeline">
+    <div class="controls">
+      <button id="play" aria-label="Play">Play</button>
+      <label class="small">Speed
+        <select id="speed">
+          <option value="1">1 h/s</option>
+          <option value="3" selected>3 h/s</option>
+          <option value="8">8 h/s</option>
+        </select>
+      </label>
+      <label class="small"><input type="checkbox" id="interp" checked> Interpolate between bulletins</label>
+      <label class="small"><input type="checkbox" id="early"> Show 20–21 Jan</label>
+    </div>
+    <svg id="chart" aria-hidden="true"></svg>
+    <input id="scrub" type="range" min="48" max="215.99" step="0.05" value="55" aria-label="Time">
+  </div>
+
+  <noscript><p class="panel">This page needs JavaScript and WebGL.</p></noscript>
+  <p class="panel fail" id="fail" hidden>Your browser could not start WebGL, so the 3D view cannot be shown. The research below still works.</p>
+</section>
+
+<p class="lede">What happens when environmental degradation is addressed through further environmental intervention?</p>
+<p>In January 2025, fine particulate matter (PM2.5) built up over Bangkok. Burning, traffic, industry and regional transport changed the air; weak ventilation and temperature inversions held it near the ground. Authorities then flew aircraft releasing cold water and dry ice into the atmosphere, hoping to break the inversion and let the dust escape. This sketch sets the two modifications side by side and asks whether a modification can restore an earlier condition, or whether it redistributes consequences and makes further intervention normal. It does not assume an answer.</p>
+
+<h2>Reading the view</h2>
+<dl class="key">
+  <dt><span class="swatch pm"></span> Purple · existing PM2.5 (observed)</dt>
+  <dd>Symbolic. The number of particles follows the BMA morning bulletin: <code>visualDensity = clamp(C / 100 µg/m³, 0, 1)</code>, so 88.4 µg/m³ shows 88% of the particles and 26 µg/m³ shows 26%. Particle size, number and speed are not physical. Between the 07:00 bulletins the value is interpolated for display only (switch it off to see steps). Particles are drawn mostly below the ERA5 mixing height and drift with ERA5 surface wind; both are visual choices, not a dispersion model.</dd>
+  <dt><span class="swatch heat"></span> Amber · temperature and inversion layers (reanalysed and modelled)</dt>
+  <dd>Bands appear wherever a model level is warmer than the one below it (an inversion), with opacity following the temperature difference. The dashed amber plane is ERA5 boundary-layer height, the depth of air the model expects to be mixed.</dd>
+  <dt><span class="swatch release"></span> Blue/cyan · substances released by aircraft (reported, schematic)</dt>
+  <dd>Shown only in the reported 10:00 and 14:00 slots from 24 January. The path, the plume and the aircraft are schematic: no flight track, release time or quantity for a specific Bangkok flight has been published. The altitude band spans the reported figures (below 3,000 ft; about 1,500 m). <strong>The cyan plume does not touch the purple particles.</strong> The purple follows the measurements alone, so the view never shows the flights clearing the air.</dd>
+</dl>
+
+<h2>Event</h2>
+<p>Morning PM2.5 rose from 54.1 µg/m³ on 20 January to 88.4 on 24 January, more than twice the Thai 24-hour standard of 37.5, then fell to 26 on 28 January. On 22 January 53 schools closed; on 24 January, 352. Free public transport ran from 25 to 31 January. The surrounding reports name burning as a main source; the department running the flights said stopping burning was the most effective solution.</p>
+
 <h2>Simulate</h2>
-<canvas id="view" width="1200" height="600"></canvas>
-<p class="label">Synthetic: a steady east wind, made up for this template. Not observed data.</p>
+<p>Nothing here is a physical simulation. The view is a mapping of three separate records onto one shared clock: the morning PM2.5 bulletins (observed), hourly ERA5 reanalysis and archived model temperatures at six heights (reanalysed and modelled), and the published accounts of the flights (reported). Their relationship in the view is visual, not causal. Heights are exaggerated eight times; labels give true metres.</p>
 
-<!-- 3. Situate: where, when, who. Add a map, places, institutions, dates. -->
 <h2>Situate</h2>
-<p>Where and when does this happen? Who runs it, who is affected, and who decides?</p>
+<p>The Department of Royal Rainmaking and Agricultural Aviation ran PM2.5 operations from December 2024 with aircraft at regional bases. An AFP photograph dated 15 January shows icy water sprayed over Bangkok's outskirts; on 6 January Khaosod reported permission for flights over the city. On 24 January the government announced an expanded phase with flights in inner Bangkok airspace. The Royal Thai Air Force joined from 26 January. Before and during this, weather agencies tracked a cold air mass and stronger winds arriving on 26–27 January.</p>
 
-<!-- 4. Narrate: the story in a few sentences, and what the model cannot show. -->
 <h2>Narrate</h2>
-<p>Tell the story in a few sentences.</p>
+<p>The air did clear. The view shows what can be said about why. The flights began as the morning values peaked; the values fell over the following four days; the reanalysis shows the morning inversion disappearing and the mixing height rising to 580 m on 27 January, as surface wind reached 5–6 m/s from the east-northeast that morning. The department claimed it broke the inversion. Weather agencies and the governor credited wind. No public before-and-after measurement isolates the effect of any flight. A viewer can see the coincidence; they should not conclude the cause.</p>
+
+<section id="archive">
+<h2>Source archive</h2>
+<p class="small muted">Every value and statement on this page comes from one of these. "Read" means the page was opened and the value confirmed on 16 November 2026. "Secondary" means it was found through research and not re-read. "Unreachable" means the page could not be loaded from here.</p>
+<ol id="source-list" class="sources"></ol>
+</section>
 
 <h2>Sources and limits</h2>
 <ul>
-  <li>Wind field: synthetic. A steady east wind with a little random wobble, made up for the starter template. It describes no real place or time.</li>
-  <li>Dot positions: synthetic, random at each page load.</li>
-  <li>No observed, reanalysed or modelled data is used yet.</li>
+  <li><strong>PM2.5, observed.</strong> BMA morning bulletins (05:00–07:00, reported about 07:00), via The Nation and BMA pages. Not 24-hour averages. 26 January (58.6) comes from the official bulletin cited in the research brief and is not independently checked here. District bars show only the highest districts each report names, so the spatial field elsewhere is not known; the purple cloud is the same across the city.</li>
+  <li><strong>Weather, reanalysed and modelled.</strong> ERA5 via Open-Meteo (2 m temperature, 10 m wind, boundary-layer height) at 13.75° N 100.50° E, one grid point for the whole city. Pressure-level temperatures from Open-Meteo's archived model runs. Licence CC BY 4.0. Fetched 16 November 2026; processed with <code>tools/prepare-data.mjs</code>.</li>
+  <li><strong>Flights, reported.</strong> Altitudes, times, materials and aircraft as reported (see the archive). The sources disagree on altitude and on when Bangkok flights were first permitted. No daily flight log for Bangkok exists in the sources found.</li>
+  <li><strong>City, cartographic and schematic.</strong> River and city outline from Natural Earth (public domain); districts from geoBoundaries (Royal Thai Survey Department, OCHA ROAP; CC BY 3.0 IGO). Mahanakhon and Baiyoke Tower II are placed and sized from CTBUH and Wikipedia. All other buildings are generated and are not real buildings.</li>
+  <li><strong>What this sketch cannot show:</strong> whether the flights changed PM2.5; where the released water and ice went; any difference between neighbourhoods beyond the named districts; anything between the morning bulletins.</li>
 </ul>
-<p>What this sketch cannot show: any real weather. The wind never changes speed or direction, has no height, and is not tied to a map, so nothing here should be read as a measurement or a forecast.</p>
 
 <footer class="site-footer">
-  <p>Prova · Paolo Mantecchini · Realtime Weather working group, Weather Commons</p>
+  <p>Co-Modification · Paolo Mantecchini · Realtime Weather working group, Weather Commons, TBA21–Academy</p>
+  <p>Three.js © three.js authors (MIT). Code MIT; text CC BY 4.0.</p>
 </footer>
 </main>
-<script>
-  // A tiny simulation: dots carried by a steady wind, with a little random spread.
-  // Replace it with your own model. Load your own files with relative paths, e.g. fetch('data/my-file.json').
-  const canvas = document.getElementById('view');
-  const ctx = canvas.getContext('2d');
-  const ink = getComputedStyle(document.body).color;           // black, or white in dark mode
-  const paper = getComputedStyle(document.body).backgroundColor;
-  const wind = { east: 1.2, north: 0.2 }; // pixels per frame (synthetic)
-  const spread = 0.6;                      // random wobble per frame
-  const dots = Array.from({ length: 1500 }, () => ({ x: Math.random() * canvas.width, y: Math.random() * canvas.height }));
-
-  function step() {
-    ctx.globalAlpha = 0.15;                // fade old positions into trails
-    ctx.fillStyle = paper;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = ink;
-    for (const d of dots) {
-      d.x = (d.x + wind.east + (Math.random() - 0.5) * spread + canvas.width) % canvas.width;
-      d.y = (d.y - wind.north + (Math.random() - 0.5) * spread + canvas.height) % canvas.height;
-      ctx.fillRect(d.x, d.y, 2, 2);
-    }
-    requestAnimationFrame(step);
-  }
-  step();
-</script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
