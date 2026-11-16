@@ -1,0 +1,32 @@
+{
+  "about": "Timeline entries. Each has a 'layer' that says what kind of claim it is: event (documented environmental or social event), intervention (what authorities reported doing), mechanism (what authorities hypothesised the intervention does), observed (measurement), uncertainty (what the sources do not settle). Times are local (UTC+7).",
+  "layers": {
+    "event": "Documented event",
+    "intervention": "Intervention reported by authorities",
+    "mechanism": "Mechanism hypothesised by authorities",
+    "observed": "Observed measurement",
+    "uncertainty": "Uncertainty and limits"
+  },
+  "entries": [
+    { "date": "2025-01-06", "layer": "intervention", "text": "Khaosod reports permission for rainmaking flights over Bangkok: a 20×20 km area, 3,000–4,000 ft, dry ice at about −70 °C.", "sources": ["khaosod-0106", "thestandard-0106"], "context": true },
+    { "date": "2025-01-15", "layer": "intervention", "text": "An AFP photograph dated 15 January shows an aircraft spraying icy water over the outskirts of Bangkok. The programme predates the 24 January announcement.", "sources": ["afp-star-0124"], "context": true },
+    { "date": "2025-01-20", "layer": "observed", "text": "Morning citywide PM2.5 54.1 µg/m³, above the Thai 24-hour standard of 37.5.", "sources": ["nation-0120", "onep-std"] },
+    { "date": "2025-01-21", "layer": "observed", "text": "Morning citywide PM2.5 58.9 µg/m³.", "sources": ["nation-0121"] },
+    { "date": "2025-01-22", "layer": "event", "text": "Prelude. 53 schools close. Morning citywide PM2.5 62.6 µg/m³. Rainmaking operations were already running in the region; no Bangkok flight log is available.", "sources": ["nation-0122", "afp-star-0124"] },
+    { "date": "2025-01-23", "layer": "observed", "text": "Prelude. Morning citywide PM2.5 71 µg/m³; Nong Khaem 96.6.", "sources": ["nation-0123"] },
+    { "date": "2025-01-24", "time": "07:00", "layer": "observed", "text": "Peak of the morning bulletins: citywide 88.4 µg/m³; Nong Khaem 108, Khan Na Yao 107.7, Min Buri 105.", "sources": ["nation-0124", "bma-0124"] },
+    { "date": "2025-01-24", "layer": "event", "text": "352 schools close in 31 districts; people are urged to work from home.", "sources": ["dawn-0125"] },
+    { "date": "2025-01-24", "time": "10:00", "layer": "intervention", "text": "Expanded phase announced: flights in inner Bangkok airspace, below 3,000 ft, at most 20 minutes, daily at 10:00 and 14:00. The Nation calls it the 'first time ever'; Khaosod had reported Bangkok permission on 6 January.", "sources": ["nation-0124-flights", "khaosod-0106"] },
+    { "date": "2025-01-24", "time": "10:30", "layer": "intervention", "text": "Amarin TV reports a 10:30 operation with four aircraft (three CASA, one Caravan) from the Kanchanaburi, Hua Hin and Rayong units.", "sources": ["amarin-0124"] },
+    { "date": "2025-01-24", "layer": "mechanism", "text": "Stated aim: spray water and drop dry ice at the inversion layer to 'create atmospheric channels' so dust can rise above it. Thai PBS: the inversion is 'like a steamer lid'; spiral patterns 'open' it, zigzags cover a wider area.", "sources": ["nation-0124-flights", "amarin-0124", "thaipbs-0127"] },
+    { "date": "2025-01-25", "layer": "event", "text": "Free public transport begins (25–31 January). Morning citywide PM2.5 73.4 µg/m³.", "sources": ["prd-0127", "nation-0125"] },
+    { "date": "2025-01-26", "layer": "event", "text": "Thai Meteorological Department: a moderately strong cold air mass from China; temperatures fall 1–6 °C.", "sources": ["nation-0126-tmd"] },
+    { "date": "2025-01-26", "layer": "intervention", "text": "Royal Thai Air Force sends two BT-67 aircraft carrying about 2,000 kg of dry ice or agent per flight, 26–30 January.", "sources": ["bkkbiz-0126"] },
+    { "date": "2025-01-26", "layer": "observed", "text": "Morning citywide PM2.5 58.6 µg/m³ (official bulletin, not independently checked here).", "sources": ["bma-0126", "nation-0126"] },
+    { "date": "2025-01-27", "layer": "event", "text": "Pollution Control Department cites 'stronger winds and improved ventilation rates'; the governor says strong winds improved air quality. All 437 BMA schools reopen.", "sources": ["nation-0127-pcd", "nation-0127-gov"] },
+    { "date": "2025-01-27", "layer": "intervention", "text": "Department lists 10 aircraft for Bangkok (5 at Hua Hin, 3 Kanchanaburi, 2 Rayong) and claims it 'successfully broken the atmospheric inversion layer'. Its head adds that stopping burning is the most effective solution.", "sources": ["nation-0127-ops"] },
+    { "date": "2025-01-27", "layer": "observed", "text": "Morning citywide PM2.5 41 µg/m³.", "sources": ["nation-0127"] },
+    { "date": "2025-01-28", "layer": "observed", "text": "Morning citywide PM2.5 26 µg/m³, below the Thai standard for the first time in the period.", "sources": ["nation-0128", "onep-std"] },
+    { "date": "2025-01-28", "layer": "uncertainty", "text": "No source found attributes the 26–28 January fall to the flights except the department itself. Weather agencies and the governor attribute it to wind and a cold air mass. There is no public before/after measurement for any flight.", "sources": ["nation-0127-pcd", "nation-0127-gov", "nation-0126-tmd", "afp-malaymail-0124"] }
+  ]
+}
