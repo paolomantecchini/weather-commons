@@ -1,4 +1,4 @@
-// Co-Modification · sketch 42
+// Atmospheric Counter-modification · sketch 42
 // A 3D reading of Bangkok, 20–28 January 2025: observed PM2.5 (purple), reported releases (red),
 // with the ERA5 mixing height as a grey line. Separate records on one clock. Nothing here simulates physics.
 //

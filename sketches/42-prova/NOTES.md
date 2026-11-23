@@ -1,6 +1,6 @@
 # Notes
 
-Working notes for sketch 42 · Co-Modification. Read this first. Date each entry, and move items to Done when they ship.
+Working notes for sketch 42 · Atmospheric Counter-modification. Read this first. Date each entry, and move items to Done when they ship.
 
 ## Next
 
@@ -15,7 +15,8 @@ Working notes for sketch 42 · Co-Modification. Read this first. Date each entry
 - 2026-11-16: visualDensity = clamp(C / 100, 0, 1). 100 µg/m³ is just above the period's peak (88.4).
 - 2026-11-16: Inversions use pressure levels from one model only (1000–850 hPa), not ERA5 2 m temperature, to avoid mixing datasets.
 - 2026-11-16: Aircraft drawn at 850 m (inside the 3,000 ft ceiling), with the reported 3,000 ft and ≈1,500 m shown as rings.
-- 2026-11-16: The folder stays `42-prova`; the title is Co-Modification.
+- 2026-11-16: The folder stays `42-prova`.
+- 2026-11-23: Title changed from Co-Modification to Atmospheric Counter-modification (Paolo).
 - 2026-11-16: Paolo: the amber inversion bands are removed (not significant for the piece); releases are red instead of cyan. The mixing height stays as a grey dashed line, because the purple's height follows it. Inversion data is still computed in data/meteo.json.
 - 2026-11-16: Page text rewritten in plain language around three questions: what was sprayed, what was the goal, what happened to PM2.5. The aircraft now arrives and climbs before spraying.
 
@@ -29,4 +30,4 @@ Working notes for sketch 42 · Co-Modification. Read this first. Date each entry
 
 - 2026-11-09: started from the template.
 - 2026-11-09: first page: title, author, starter question, Sources and limits (all synthetic).
-- 2026-11-16: rebuilt as Co-Modification: 3D Bangkok, observed PM2.5, reanalysis and model temperature layers, reported flights, five cameras, timeline 20–28 Jan, source archive.
+- 2026-11-16: rebuilt as Atmospheric Counter-modification: 3D Bangkok, observed PM2.5, reanalysis and model temperature layers, reported flights, five cameras, timeline 20–28 Jan, source archive.

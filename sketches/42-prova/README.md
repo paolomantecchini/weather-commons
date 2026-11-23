@@ -1,4 +1,4 @@
-# 42 · Co-Modification
+# 42 · Atmospheric Counter-modification
 
 Author: Paolo Mantecchini · Started: 2026-11-09 · Status: v0.2 · Stack: static HTML + JS, Three.js 0.170 (vendored), no build step
 
